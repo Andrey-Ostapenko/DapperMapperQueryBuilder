@@ -293,13 +293,19 @@ namespace Mapper
         #endregion
 
         #region public methods
+        /// <summary>
+        /// Always call this when you have finished an object configuration, even if you just want the object to be included (f.i. even if the object
+        /// have no nested types, only built-in, you have to call this method).
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
         public void EndConfig<T>()
         {
             StoreType(typeof(T));
             SetMembersInformation(typeof(T));
         }
         /// <summary>
-        /// NO overwrite
+        /// Mapper will use the Func as a constructor to create T type objects instances and then fill that instances.
+        /// Only one constructor per type. NO overwrite.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="instanceConstructor"></param>
@@ -322,16 +328,16 @@ Correct type: {typeof(T).ToString()}");
                         return this;
                     }
                     else throw new CustomException_MapperConfig($@"MapperConfig.AddConstructor.
-Dictionary of constructor already have a constructor for that type.
+Already have a constructor for that type.
 Type: {typeof(T).ToString()}");
                 }
             }
             else throw new CustomException_MapperConfig($@"MapperConfig.AddConstructor.
-Dictionary of constructor already have a constructor for that type.
+Already have a constructor for that type.
 Type: {typeof(T).ToString()}");
         }
         /// <summary>
-        /// 
+        /// Mapper will use the Func to fully create the object, no constructors, nested members, etc., only the Func.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <typeparam name="TMember"></typeparam>
@@ -348,7 +354,7 @@ Type: {typeof(T).ToString()}");
             return AddMemberCreator<T>(memberName, creatorExpression, overwrite);
         }
         /// <summary>
-        /// 
+        /// Mapper will use the Func to fully create the object, no constructors, nested members, etc., only the Func.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="memberName"></param>
@@ -390,7 +396,8 @@ Type: {typeof(T).ToString()}");
             }
         }
         /// <summary>
-        /// NO overwrite
+        /// Set member as nested type so mapper will try to find a mapper of the nested type to create that member. Obviously you have to 
+        /// config the nested type mapper apart. NO overwrite
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <typeparam name="TMember"></typeparam>
@@ -402,7 +409,8 @@ Type: {typeof(T).ToString()}");
             return AddNestedProperty<T>(isAnInterface, propName);
         }
         /// <summary>
-        /// NO overwrite
+        /// Set members (of a same type) as nested type so mapper will try to find a mapper of the nested type to create that member. Obviously you have to 
+        /// config the nested type mapper apart. NO overwrite
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <typeparam name="TMember"></typeparam>
@@ -418,7 +426,8 @@ Type: {typeof(T).ToString()}");
             return this;
         }
         /// <summary>
-        /// NO overwrite
+        /// Set member as nested type so mapper will try to find a mapper of the nested type to create that member. Obviously you have to 
+        /// config the nested type mapper apart. NO overwrite
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="memberName"></param>
@@ -455,7 +464,8 @@ Type: {typeof(T).ToString()}");
             }
         }
         /// <summary>
-        /// NO overwrite
+        /// Set members (of a same type) as nested type so mapper will try to find a mapper of the nested type to create that member. Obviously you have to 
+        /// config the nested type mapper apart. NO overwrite
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="memberNames"></param>
@@ -466,6 +476,7 @@ Type: {typeof(T).ToString()}");
             return this;
         }
         /// <summary>
+        /// Set a member as a dictionary and the name that keys and values will have in the Dapper's dynamic result:
         /// keyValueDynamicNames: [0] = key name ; [1] = value name
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -483,6 +494,7 @@ Type: {typeof(T).ToString()}");
             return AddDictionary<T>(memberName, keyValueDynamicNames, overwrite);
         }
         /// <summary>
+        /// Set a member as a dictionary and the name that keys and values will have in the Dapper's dynamic result:
         /// keyValueDynamicNames: [0] = key name ; [1] = value name
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -516,7 +528,19 @@ Type: {typeof(T).ToString()}");
                 }
             }
         }
-        public MapperConfig AddInterfacToObjectCondition<TInterface>(Func<dynamic, bool> condition, Type type, bool overwrite = false)
+        /// <summary>
+        /// If a member is setted as interface (with AddNestedProperty(true,...)), the mapper will search through conditions setted with this method
+        /// using the Func, and map an object of type "type" instead.
+        /// F.i. if you have "interface iPerson", "class Customer : iPerson" and use 
+        /// AddInterfaceToObjectCondition<iPerson>(FuncCondition, typeof(Customer)), the mapper of "iPerson" will create "Customer" objects when
+        /// the condition will be satisfied.
+        /// </summary>
+        /// <typeparam name="TInterface"></typeparam>
+        /// <param name="condition"></param>
+        /// <param name="type"></param>
+        /// <param name="overwrite"></param>
+        /// <returns></returns>
+        public MapperConfig AddInterfaceToObjectCondition<TInterface>(Func<dynamic, bool> condition, Type type, bool overwrite = false)
         {
             if (!typeof(TInterface).IsInterface)
                 throw new CustomException_MapperConfig(
@@ -547,11 +571,28 @@ Type: {typeof(T).ToString()}");
                 }
             }
         }
+        /// <summary>
+        /// By default duplicates created with JOINs are removed, you can use this to allow duplicates. With allowDuplicates = false is the same as
+        /// if you don't call this method.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TMember"></typeparam>
+        /// <param name="memberExpression"></param>
+        /// <param name="allowDuplicates"></param>
+        /// <returns></returns>
         public MapperConfig AllowDuplicatesIfEnumerable<T, TMember>(Expression<Func<T, TMember>> memberExpression, bool allowDuplicates = false)
         {
             string memberName = GetPropertyReturnName(memberExpression);
             return AllowDuplicatesIfEnumerable<T>(memberName, allowDuplicates);
         }
+        /// <summary>
+        /// By default duplicates created with JOINs are removed, you can use this to allow duplicates. With allowDuplicates = false is the same as
+        /// if you don't call this method.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="memberName"></param>
+        /// <param name="allowDuplicates"></param>
+        /// <returns></returns>
         public MapperConfig AllowDuplicatesIfEnumerable<T>(string memberName, bool allowDuplicates = false)
         {
             Type destination = typeof(T);
@@ -573,8 +614,9 @@ Type: {typeof(T).ToString()}");
             }
         }
         /// <summary>
-        /// Union.
-        /// Exclusive: Only dapper results with this prefix will be taken to map the object, even if their names are equal to the type's originals.
+        /// Prefixes that Dapper's dynamic result will use in the member names.
+        /// With exclusive = false prefixes don't overwrite but get added to an array of possible prefixes.
+        /// With exclusive = true only dapper results with this prefix will be taken to map the object, even if their names are equal to the type's originals.
         /// F.I. if two objects are retrieved in a same dynamic and both have distinct properties 
         /// called "Id", one of both should add an exclusive prefix or postfix, otherwise the mapper won't know what member
         /// will be for one object and what for the other. That means that when an exclusive pre-postfix are added, ALL corresponding dynamic
@@ -616,6 +658,12 @@ Type: {typeof(T).ToString()}");
                 }
             }
         }
+        /// <summary>
+        /// Remove specified prefixes.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="prefixes"></param>
+        /// <returns></returns>
         public MapperConfig RemovePrefixes<T>(string[] prefixes)
         {
             Type destination = typeof(T);
@@ -641,13 +689,14 @@ Type: {typeof(T).ToString()}");
             }
         }
         /// <summary>
-        /// Union.
-        /// Exclusive: Only dapper results with this prefix will be taken to map the object, even if their names are equal to the type's originals.
+        /// Postfixes that Dapper's dynamic result will use in the member names.
+        /// With exclusive = false postfixes don't overwrite but get added to an array of possible postfixes.
+        /// With exclusive = true only dapper results with this postfix will be taken to map the object, even if their names are equal to the type's originals.
         /// F.I. if two objects are retrieved in a same dynamic and both have distinct properties 
         /// called "Id", one of both should add an exclusive prefix or postfix, otherwise the mapper won't know what member
         /// will be for one object and what for the other. That means that when an exclusive pre-postfix are added, ALL corresponding dynamic
-        /// members HAVE to use it. Therefore exclusive prefixes will have an overwrite effect, the rest of prefixes will be deleted permanently, 
-        /// even the previous exclusive. Same with postfixes.
+        /// members HAVE to use it. Therefore exclusive postfixes will have an overwrite effect, the rest of postfixes will be deleted permanently, 
+        /// even the previous exclusive. Same with prefixes.
         /// If after added a pre_postfix as exclusive, the method is called again to add other non-exclusive ones,
         /// it will convert the old exclusive to non-exclusive and add the new ones.
         /// </summary>
@@ -684,6 +733,12 @@ Type: {typeof(T).ToString()}");
                 }
             }
         }
+        /// <summary>
+        /// Remove specified postfixes.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="postfixes"></param>
+        /// <returns></returns>
         public MapperConfig RemovePostfixes<T>(string[] postfixes)
         {
             Type destination = typeof(T);

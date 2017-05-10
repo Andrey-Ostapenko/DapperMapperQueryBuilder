@@ -184,24 +184,6 @@ namespace QBuilder
             StoreParametersFrom(obj);
             return Query;
         }
-        //public string Update<T>(IEnumerable<T> objs) where T : iObjModelBase
-        //{
-        //    Type t = typeof(T);
-        //    AddUpdate(t);
-        //    AddUpdateSet(t);
-        //    AddWhere(new SQLCondition("Id", "@Id"));
-        //    StoreParametersFrom(obj);
-        //    return Query;
-        //}
-        //public string Update<T>(IEnumerable<T> objs, string tableName) where T : iObjModelBase
-        //{
-        //    Type t = typeof(T);
-        //    AddUpdate(tableName);
-        //    AddUpdateSet(t);
-        //    AddWhere(new SQLCondition("Id", "@Id"));
-        //    StoreParametersFrom(obj);
-        //    return Query;
-        //}
         public string Delete<T>(T obj) where T : iObjModelBase
         {
             Type t = typeof(T);

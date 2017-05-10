@@ -45,6 +45,7 @@
     <Compile Include="Mapper\MapperExceptions.cs" />
     <Compile Include="Mapper\MapperIEnumerable.cs" />
     <Compile Include="Mapper\MapperPrePostFixesParser.cs" />
+    <Compile Include="Mapper\MapperStore.cs" />
     <Compile Include="MQBStaticDictionaries.cs" />
     <Compile Include="QueryBuilder\QueryBuilder.cs" />
     <Compile Include="QueryBuilder\QueryBuilderExceptions.cs" />

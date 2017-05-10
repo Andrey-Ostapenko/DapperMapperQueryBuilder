@@ -8,6 +8,11 @@ namespace MQBStatic
 {
     public static class StringExtension
     {
+        /// <summary>
+        /// With ";" + NewLine as separator.
+        /// </summary>
+        /// <param name="list"></param>
+        /// <returns></returns>
         public static string FlattenStringsList(this IEnumerable<string> list)
         {
             string result = "";

@@ -23,19 +23,17 @@ namespace QBuilder
                 throw new CustomException_StringSQLBuilder("SQLCondition: A condition must have both left and right side string.");
 
             leftSide = leftSide.PutAhead(leftAlias, ".");
-            //this.LeftAlias = leftAlias;
             rightSide = rightSide.PutAhead(rightAlias, ".");
-            //this.RightAlias = rightAlias;
 
             ConditionString = string.Concat(leftSide, condition, rightSide, separator, " ");
         }
-        //public SQLCondition(string leftSide, string rightSide, string condition, string separator)
-        //{
-        //    if (leftSide == null || rightSide == null)
-        //        throw new CustomException_QueriesBuilder("SQLCondition: A condition must have both left and right side string.");
-
-        //    ConditionString = string.Concat(leftSide, condition, rightSide, separator, " ");
-        //}
+        /// <summary>
+        /// Condition "=", separator "".
+        /// </summary>
+        /// <param name="leftSide"></param>
+        /// <param name="leftAlias"></param>
+        /// <param name="rightSide"></param>
+        /// <param name="rightAlias"></param>
         public SQLCondition(string leftSide, string leftAlias, string rightSide, string rightAlias)
         {
             if (leftSide == null || rightSide == null)
@@ -149,7 +147,7 @@ namespace QBuilder
                 return result;
             }
             /// <summary>
-            /// Without first and last commas. columnsAlias must have same size as strs.
+            /// Without first and last commas. columnsAlias must have same Count as strs.
             /// </summary>
             /// <param name="strs"></param>
             /// <param name="tableAlias"></param>
@@ -162,37 +160,8 @@ namespace QBuilder
                 result = result.Replace(",", "," + tableAlias + ".");
                 result = result.PutAhead(tableAlias + ".");
 
-                //string result = "";
-                //tableAlias = tableAlias == "" ? "" : string.Concat(tableAlias, ".");
-                //columnsAlias = columnsAlias == "" ? "" : string.Concat(" ", columnsAlias);
-
-                //foreach (string str in strs) result = result.Append(tableAlias, str, columnsAlias, ",");
-
-                //result = result.Remove(result.LastIndexOf(','));
-                ////if (tableAlias != "")
-                ////{
-                ////    result = result.Replace(",", "," + tableAlias + ".");
-                ////    result = result.PutAhead(tableAlias, ".");
-                ////}
-
                 return result;
             }
-            //private string ConcatAndAddCommasAndAliasWOId(IEnumerable<string> strs, string alias = "")
-            //{
-            //    string result = "";
-
-            //    foreach (string str in strs) result = string.Concat(result, str, ",");
-
-            //    result = result.Remove(result.LastIndexOf(','))
-            //        .RemoveOrThis(result.LastIndexOf("Id,"), 3);
-            //    if (alias != "")
-            //    {
-            //        result = result.Replace(",", "," + alias + ".");
-            //        result = string.Concat(alias, ".", result);
-            //    }
-
-            //    return result;
-            //}
             #endregion
         }
         public sealed class ColumnsBuilder
@@ -213,7 +182,6 @@ namespace QBuilder
             public void GetAllColumns(Type t)
             {
                 _qBuilder.Columns = _Columns[t];
-                //_qBuilder.RemoveLastComma();
             }
             /// <summary>
             /// Without first and last commas.
@@ -226,18 +194,6 @@ namespace QBuilder
             {
                 _qBuilder.Columns = _Columns[t];
                 _qBuilder.AddTableAliasToColumns(tableAlias);
-                //_qBuilder.RemoveLastComma();
-                //columns = columns.Replace(",", "," + tableAlias + ".");
-                //columns = columns.PutAhead(tableAlias + ".");
-                //columns = columns.Remove(columns.LastIndexOf(','));
-
-                //tableAlias = tableAlias == "" ? "" : string.Concat(tableAlias, ".");
-
-                //foreach(PropertyInfo pInfo in _QBPropertyInfos[t]) columns = columns.Append(tableAlias, pInfo.Name, ",");
-                //foreach(FieldInfo fInfo in _QBFieldInfos[t]) columns = columns.Append(tableAlias, RemoveFieldsUnderscore(fInfo.Name), ",");
-
-                //columns = columns.Remove(columns.LastIndexOf(','));
-                //return columns;
             }
             /// <summary>
             /// Without first and last commas.
@@ -266,40 +222,13 @@ namespace QBuilder
             /// <returns></returns>
             public void GetAllColumns(Type t, string tableAlias, IEnumerable<string> columnsAlias)
             {
-                //if (!_NamesList.ContainsKey(t)) throw new CustomException_QueriesBuilder(
-                //    $"QueryBuilder.GetAllColumns: Type {t.Name} is not properly configurated.");
-                //if (columnsAlias == null && tableAlias == "")
-                //    return _Columns[t];
-                //if (_Columns[t].Count() != columnsAlias.Count()) throw new CustomException_QueriesBuilder(
-                //    $"QueryBuilder.GetallColumns: columnsAlias.Count have to be equal to _Columns[t].Count.");
-
                 IEnumerable<string> names = _NamesList[t]
                     .Select(x => RemoveFieldsUnderscore(x))
                     .OrderBy(x => x);
-                //tableAlias = tableAlias == "" ? "" : string.Concat(tableAlias, ".");
 
                 names = names.Zip(columnsAlias, (name, cAlias) => tableAlias + "." + name + " " + cAlias);
                 _qBuilder.Columns = string.Join(",", names);
             }
-            //public string GetAllColumns(Type t, string tableAlias = "", string columnsAlias = "")
-            //{
-            //    string columns = "";
-            //    tableAlias = tableAlias == "" ? "" : string.Concat(tableAlias, ".");
-            //    columnsAlias = columnsAlias == "" ? "" : string.Concat(" ", columnsAlias);
-
-            //    foreach(PropertyInfo pInfo in _QBPropertyInfos[t]) columns = columns.Append(tableAlias, pInfo.Name, columnsAlias, ",");
-            //    foreach(FieldInfo fInfo in _QBFieldInfos[t]) columns = columns.Append(tableAlias, RemoveFieldsUnderscore(fInfo.Name), columnsAlias, ",");
-
-            //    columns = columns.Remove(columns.LastIndexOf(','));
-            //    //if (tableAlias != "")
-            //    //{
-            //    //    columns = columns.Replace(",", "," + tableAlias + ".");
-            //    //    columns = columns.PutAhead(tableAlias, ".");
-            //    //}
-
-            //    return columns;
-            //}
-
             /// <summary>
             /// Without first and last commas.
             /// </summary>
@@ -309,7 +238,6 @@ namespace QBuilder
             {
                 _qBuilder.Columns = _Columns[t];
                 _qBuilder.RemoveId();
-                //_qBuilder.RemoveLastComma();
             }
             /// <summary>
             /// Without first and last commas.
@@ -322,7 +250,6 @@ namespace QBuilder
                 _qBuilder.Columns = _Columns[t];
                 _qBuilder.RemoveId();
                 _qBuilder.AddTableAliasToColumns(tableAlias);
-                //_qBuilder.RemoveLastComma();
             }
             /// <summary>
             /// Without first and last commas.
@@ -359,18 +286,6 @@ namespace QBuilder
 
                 names = names.Zip(columnsAlias, (name, cAlias) => tableAlias + "." + RemoveFieldsUnderscore(name) + " " + cAlias);
                 _qBuilder.Columns = string.Join(",", names);
-                //string columns = "";
-                //tableAlias = tableAlias == "" ? "" : string.Concat(tableAlias, ".");
-                //columnsAlias = columnsAlias == "" ? "" : string.Concat(" ", columnsAlias);
-
-                //foreach (PropertyInfo pInfo in _QBPropertyInfos[t]) columns = columns.Append(tableAlias, pInfo.Name, columnsAlias, ",");
-                //foreach (FieldInfo fInfo in _QBFieldInfos[t]) columns = columns.Append(tableAlias, RemoveFieldsUnderscore(fInfo.Name), columnsAlias, ",");
-
-                //int aliasLength = tableAlias.Length + columnsAlias.Length;
-                //columns = columns.Remove(columns.LastIndexOf(','))
-                //    .RemoveOrThis(columns.LastIndexOf("Id,"), 3 + aliasLength);
-
-                //return columns;
             }
             #endregion
         }
@@ -384,10 +299,10 @@ namespace QBuilder
             private StringSQLBuilder _qBuilder;
 
             /// <summary>
-        /// Without first and last commas.
-        /// </summary>
-        /// <param name="t"></param>
-        /// <returns></returns>
+            /// Without first and last commas.
+            /// </summary>
+            /// <param name="t"></param>
+            /// <returns></returns>
             public string GetInsertValuesString(Type t)
             {
                 string values = _Columns[t];
@@ -409,15 +324,6 @@ namespace QBuilder
                 values = values.Replace(",", paramSuffix + "," + "@");
                 values = values.Remove(values.LastIndexOf(",@"), 2);
                 return values;
-                //string values = "";
-
-                //foreach (PropertyInfo pInfo in _QBPropertyInfos[t]) values = values.Append("@", pInfo.Name, paramSuffix, ",");
-                //foreach (FieldInfo fInfo in _QBFieldInfos[t]) values = values.Append("@", RemoveFieldsUnderscore(fInfo.Name), paramSuffix, ",");
-
-                //values = values.Remove(values.LastIndexOf(','))
-                //    .RemoveOrThis(values.LastIndexOf("@Id,"), 4 + paramSuffix.Length);
-
-                //return values;
             }
             /// <summary>
             /// Without first and last commas.
@@ -477,21 +383,6 @@ namespace QBuilder
                 set = set.Remove(set.LastIndexOf(','));
 
                 return set;
-                //string set = "";
-
-                //foreach (PropertyInfo pInfo in _QBPropertyInfos[t]) set = set.Append(pInfo.Name, "=@", pInfo.Name, paramSuffix, ",");
-                //foreach (FieldInfo fInfo in _QBFieldInfos[t]) set = set.Append(fInfo.Name, "=@", fInfo.Name, paramSuffix, ",");
-
-                //int aliasLength = tableAlias == "" ? 0 : tableAlias.Length + 1;
-                //set = set.Remove(set.LastIndexOf(','))
-                //    .RemoveOrThis(set.LastIndexOf("Id=@Id"), 6 + aliasLength);
-
-                //if (tableAlias != "")
-                //{
-                //    set = set.Replace(",", "," + tableAlias + ".");
-                //    set = set.PutAhead(tableAlias, ".");
-                //}
-                //return set;
             }
             /// <summary>
             /// Without first and last commas.
@@ -534,15 +425,6 @@ namespace QBuilder
             }
         }
         #endregion
-        
-        //¿Método único para FindMaxId? -> ¿En repository?
-        //public QBuilder CloseQuery(string end)
-        //{
-        //    if (QueryT == QueryType.INSERT) Query = Query.Append(")");
-
-        //    Query = Query.Append(end);
-        //    return this;
-        //}
 
         #region SELECT 
         public StringSQLBuilder AddSelect(Type t)
@@ -612,7 +494,7 @@ namespace QBuilder
         }
         #endregion
         #region INSERT
-        //TODO: INSERT mal, se puede insertar en varias tablas, ejemplo: http://stackoverflow.com/questions/452859/inserting-multiple-rows-in-a-single-sql-query
+        //TODO: ¿INSERT mal?, se puede insertar en varias tablas, ejemplo: http://stackoverflow.com/questions/452859/inserting-multiple-rows-in-a-single-sql-query
         public StringSQLBuilder AddInsertInto()
         {
             Query = "INSERT INTO ";
@@ -830,8 +712,6 @@ namespace QBuilder
         }
         public StringSQLBuilder AddDeleteFrom(string tableName, string tableAlias = "")
         {
-            //if (tableAlias == "") Query = Query.Append("DELETE FROM ", tableName), " ");
-            //else 
             Query = Query.Append("DELETE FROM ", tableName, " ", tableAlias, " ");
             return this;
         }
@@ -844,8 +724,6 @@ namespace QBuilder
         /// <returns></returns>
         public StringSQLBuilder AddDeleteFrom(Type t, string tableAlias = "")
         {
-            //if (tableAlias == "") Query = Query.Append("DELETE FROM ", tableName), " ");
-            //else 
             Query = Query.Append("DELETE FROM ", t.Name, " ", tableAlias, " ");
             return this;
         }
@@ -853,8 +731,6 @@ namespace QBuilder
         #region CLAUSES
         public StringSQLBuilder AddFrom(string tableName, string alias = "")
         {
-            //if (alias == "") Query = Query.Append("FROM ", tableName), " ");
-            //else 
             Query = Query.Append("FROM ", tableName, " ", alias, " ");
             return this;
         }
@@ -867,8 +743,6 @@ namespace QBuilder
         /// <returns></returns>
         public StringSQLBuilder AddFrom(Type t, string alias = "")
         {
-            //if (alias == "") Query = Query.Append("FROM ", tableName), " ");
-            //else 
             Query = Query.Append("FROM ", t.Name, " ", alias, " ");
             return this;
         }
@@ -924,20 +798,6 @@ namespace QBuilder
         }
         public StringSQLBuilder AddOn(IEnumerable<SQLCondition> conditions)
         {
-            //if (left == null || right == null || left.Length != right.Length ||
-            //    (conditions != null && left.Length != conditions.Length))
-            //    throw new CustomException_QueriesBuilder("QBuilder.AddWhere: All string arrays must have same size(only conditions can be null)");
-
-            //Query = Query.Append("ON ");
-            //if (conditions == null)
-            //{
-            //    //List<string> list = new List<string>();
-            //    //for (int i = 0; i < left.Length; i++) list.Add("");
-            //    //conditions = list.ToArray();
-            //    for (int i = 0; i < left.Length; i++) Query = Query.Append(left[i], "==", right[i], ",");
-            //}
-            //else for (int i = 0; i < left.Length; i++) Query = Query.Append(left[i], conditions[i], right[i], ",");
-            //Query = Query.Remove(Query.LastIndexOf(','));
             Query = Query.Append("ON ");
             foreach (SQLCondition condition in conditions) Query = Query.Append(condition.ConditionString);
             return this;
@@ -1050,15 +910,11 @@ namespace QBuilder
         }
         public StringSQLBuilder AddTable(string tableName, string alias = "")
         {
-            //if (alias == "") Query = Query.Append(tableName), " ");
-            //else
             Query = Query.Append(tableName, " ", alias, " ");
             return this;
         }
         public StringSQLBuilder AddTable(Type t, string alias = "")
         {
-            //if (alias == "") Query = Query.Append(tableName), " ");
-            //else
             Query = Query.Append(t.Name, " ", alias, " ");
             return this;
         }
@@ -1084,48 +940,4 @@ namespace QBuilder
         }
         #endregion
     }
-
-    #region old
-    //{
-    //    if (!_Columns.ContainsKey(t)) throw new CustomException_QueriesBuilder(
-    //            $"QueryBuilder.GetAllColumns: Type {t.Name} have no columns string stored, it's probably not properly configurated.");
-    //    if (_Columns[t].Count() != columnsAlias.Count()) throw new CustomException_QueriesBuilder(
-    //             $"QueryBuilder.GetallColumns: columnsAlias.Count have to be equal to _Columns[t].Count.");
-    //    if (columnsAlias == null && tableAlias == "") return _Columns[t];
-
-    //    string columns;
-    //    columns = _Columns[t];
-    //    tableAlias = tableAlias == "" ? "" : string.Concat(tableAlias, ".");
-    //    IEnumerable<string> commaSplit = columns.Split(',');
-    //    commaSplit = commaSplit.Take(commaSplit.Count() - 1);
-
-    //    commaSplit = commaSplit.Zip(columnsAlias, (first, second) => tableAlias + first + " " + second);
-    //    columns = string.Join(",", commaSplit);
-    //    columns = columns.Remove(columns.LastIndexOf(','));
-    //    return columns;
-    //}
-    //{
-    //    string columns = "";
-    //    tableAlias = tableAlias == "" ? "" : string.Concat(tableAlias, ".");
-
-
-    //    var pInfos = _QBPropertyInfos[t].OrderBy(x => x.Name);
-    //    var properties = pInfos.Zip(columnsAlias, 
-    //        (pInfo, cAlias) => tableAlias + pInfo.Name + " " + cAlias);
-    //    columns = string.Join(",", properties.ToArray());
-
-    //    var fInfos = _QBFieldInfos[t].OrderBy(x => x.Name);
-    //    var fields = fInfos.Zip(columnsAlias.Skip(pInfos.Count()),
-    //        (fInfo, cAlias) => tableAlias + RemoveFieldsUnderscore(fInfo.Name) + " " + cAlias);
-    //    columns = columns.Append(string.Join(",", fields.ToArray()));
-
-    //    for (int i = 0; i < pInfos.Count(); i++)
-    //        columns = columns.Append(tableAlias, pInfos.ElementAt(i).Name, " ", columnsAlias.ElementAt(i), ",");
-    //    foreach (PropertyInfo pInfo in _QBPropertyInfos[t].OrderBy(x => x.Name))
-    //    {
-    //        columns = columns.Append(tableAlias, pInfo.Name, " ", columnsAlias.ElementAt(i), ",")
-    //    }
-    //    foreach (FieldInfo fInfo in _QBFieldInfos[t])
-    //}
-    #endregion
 }
