@@ -30,16 +30,10 @@ namespace Mapper
     {
         public DapperMapper(MapperStore store)
         {
-            
-
             this.TType = typeof(T);
             this.MappersStore = store;
             this.MappersStore.StoreMapper(this.TType, this);
         }
-
-        #region fields
-        private bool _IsEnumerable;
-        #endregion
 
         #region properties
         public MapperStore MappersStore { get; private set; }
