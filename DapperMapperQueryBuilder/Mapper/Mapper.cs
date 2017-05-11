@@ -30,16 +30,20 @@ namespace Mapper
     {
         public DapperMapper(MapperStore store)
         {
+            
+
             this.TType = typeof(T);
             this.MappersStore = store;
             this.MappersStore.StoreMapper(this.TType, this);
         }
 
+        #region fields
+        private bool _IsEnumerable;
+        #endregion
+
         #region properties
         public MapperStore MappersStore { get; private set; }
         public Dictionary<MemberInfo, MemberTypeInfo> mtInfos { get { return _mtInfos[this.TType]; } }
-        //public PropertyInfo[] pInfos { get; private set; }
-        //public FieldInfo[] fInfos { get; private set; }
         public Type TType { get; private set; }
         public IEnumerable<string> NamesList { get { return _NamesList[this.TType]; } }
         public Tuple<string[], bool> Prefixes { get { return _Prefixes.ContainsKey(this.TType) ? _Prefixes[this.TType] : null; } }
@@ -302,6 +306,79 @@ If you want to map a nested property you have to create a mapper for that proper
             }
 
             return mapped;
+        }
+        /// <summary>
+        /// Generic map to IEnumerables. Result HAVE to be ordered by the splitOn column.
+        /// </summary>
+        /// <typeparam name="R"></typeparam>
+        /// <param name="dapperResult"></param>
+        /// <param name="splitOn"></param>
+        /// <param name="cleanResult"></param>
+        /// <returns></returns>
+        public R Map<R>(IEnumerable<dynamic> dapperResult, string splitOn = "Id", bool cleanResult = false)
+            where R : IEnumerable<T>
+        {
+            R result;
+            Type r = typeof(R);
+            List<dynamic> singleObjectDynamic = new List<dynamic>();
+            object splitObject = (dapperResult.First() as IDictionary<string, object>)[splitOn];
+
+            if (typeof(IList).IsAssignableFrom(r))
+            {
+                result = (R)Activator.CreateInstance(typeof(List<>).MakeGenericType(this.TType));
+
+                foreach (dynamic dyn in dapperResult)
+                {
+                    IDictionary<string, object> dict = dyn as IDictionary<string, object>;
+                    if (!dict.ContainsKey(splitOn))
+                        throw new CustomException_DapperMapper(
+                            $@"DapperMapper.Map(IEnumerable): Dapper result doesn't have a member with name equals to splitOn parameter.
+SplitOn = {splitOn}");
+
+                    if (!object.Equals(splitObject, dict[splitOn]) || dapperResult.Last() == dyn)
+                    {
+                        ((IList)result).Add(Map(singleObjectDynamic));
+                        singleObjectDynamic.Clear();
+                        splitObject = dict[splitOn];
+                    }
+                    else
+                        singleObjectDynamic.Add(dyn);
+                }
+            }
+            else
+            {
+                //http://stackoverflow.com/questions/18251587/assign-any-ienumerable-to-object-property
+                var addMethod = r.GetMethod("Add", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+
+                // Property doesn't support Adding
+                if (addMethod == null)
+                    throw new CustomException_DapperMapper(
+                        $@"DapperMapper.Map(IEnumerable): Method Add doesn't exist in enumerable type to map.
+enumType: {r.Name}.");
+
+                if (r.IsGenericTypeDefinition) result = (R)Activator.CreateInstance(r.MakeGenericType(this.TType));
+                else result = (R)Activator.CreateInstance(r);
+
+                foreach (dynamic dyn in dapperResult)
+                {
+                    IDictionary<string, object> dict = dyn as IDictionary<string, object>;
+                    if (!dict.ContainsKey(splitOn))
+                        throw new CustomException_DapperMapper(
+                            $@"DapperMapper.Map(IEnumerable): Dapper result doesn't have a member with name equals to splitOn parameter.
+SplitOn = {splitOn}");
+
+                    if (!object.Equals(splitObject, dict[splitOn]) || dapperResult.Last() == dyn)
+                    {
+                        addMethod.Invoke(result, new object[] { NoGenericMap(dyn) });
+                        singleObjectDynamic.Clear();
+                        splitObject = dict[splitOn];
+                    }
+                    else
+                        singleObjectDynamic.Add(dyn);
+                }
+            }
+
+            return result;
         }
         /// <summary>
         /// Non-generic Map.

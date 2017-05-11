@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Dynamic;
 using MQBStatic;
+using System.Collections;
 
 namespace Mapper
 {
@@ -50,7 +51,6 @@ namespace Mapper
             iDapperMapper mapper = (iDapperMapper)Activator.CreateInstance(typeof(DapperMapper<>).MakeGenericType(t), this);
             StoreMapper(t, mapper);
             return mapper;
-            //return null;
         }
         /// <summary>
         /// Returns true if a mapper exists or can be created, and set it as iDapperMapper.
