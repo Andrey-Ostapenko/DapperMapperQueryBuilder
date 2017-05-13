@@ -151,6 +151,7 @@ with delegate {_Constructors[TType]}.", err);
         {
             var parser = new PrePostFixesParser(this);
             T mapped = NewObject(dapperResult.First());
+            if (_OnlyConstructor.Contains(this.TType)) return mapped;
 
             //TODO: divide el siguiente foreach en dos con dos nuevos diccionarios estáticos, uno para pInfos y otro para fInfos, 
             //aunque se repita código: hacer métodos para cada parte del código del tipo:

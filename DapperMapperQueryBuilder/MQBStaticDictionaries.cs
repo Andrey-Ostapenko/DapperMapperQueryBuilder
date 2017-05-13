@@ -74,7 +74,6 @@ namespace MQBStatic
         protected static List<string> _CustomNamespaces;
         protected static Dictionary<Type, PropertyInfo[]> _QBPropertyInfos;
         protected static Dictionary<Type, FieldInfo[]> _QBFieldInfos;
-        protected static Dictionary<Type, Dictionary<MemberInfo, MemberTypeInfo>> _mtInfos;
         protected static Dictionary<Type, IEnumerable<string>> _NamesList;
         protected static Dictionary<Type, string> _Columns;
         #endregion
@@ -96,14 +95,6 @@ namespace MQBStatic
                 {
                     if (_QBFieldInfos == null)
                         _QBFieldInfos = new Dictionary<Type, FieldInfo[]>();
-                }
-            }
-            if (_mtInfos == null)
-            {
-                lock (_LockObject)
-                {
-                    if (_mtInfos == null)
-                        _mtInfos = new Dictionary<Type, Dictionary<MemberInfo, MemberTypeInfo>>();
                 }
             }
             if (_NamesList == null)
@@ -217,24 +208,41 @@ namespace MQBStatic
         }
 
         #region fields
-        //protected static readonly object _LockObject = new object();
+        protected static Dictionary<Type, Dictionary<MemberInfo, MemberTypeInfo>> _mtInfos;
         protected static Dictionary<Type, Delegate> _Constructors;
+        protected static List<Type> _OnlyConstructor;
         protected static Dictionary<Type, Dictionary<string, Delegate>> _MembersCreators;
         protected static Dictionary<Type, List<string>> _NestedProperties;
+        protected static Dictionary<Type, List<string>> _Interfaces;
         protected static Dictionary<Type, Tuple<string[], bool>> _Prefixes;
         protected static Dictionary<Type, Tuple<string[], bool>> _Postfixes;
-        protected static Dictionary<Type, List<string>> _Interfaces;
         #endregion
 
         #region helpers
         private static void InitStaticDictionaries()
         {
+            if (_mtInfos == null)
+            {
+                lock (_LockObject)
+                {
+                    if (_mtInfos == null)
+                        _mtInfos = new Dictionary<Type, Dictionary<MemberInfo, MemberTypeInfo>>();
+                }
+            }
             if (_Constructors == null)
             {
                 lock (_LockObject)
                 {
                     if (_Constructors == null)
                         _Constructors = new Dictionary<Type, Delegate>();
+                }
+            }
+            if (_OnlyConstructor == null)
+            {
+                lock (_LockObject)
+                {
+                    if (_OnlyConstructor == null)
+                        _OnlyConstructor = new List<Type>();
                 }
             }
             if (_MembersCreators == null)

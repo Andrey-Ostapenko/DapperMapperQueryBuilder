@@ -116,8 +116,43 @@ namespace Mapper
                 }
             }
         }
+        private void RemoveStaticDictionaryKey<R>(Dictionary<Type, R> dict, Type key)
+        {
+            if (dict.ContainsKey(key))
+            {
+                lock (_LockObject)
+                {
+                    if (dict.ContainsKey(key))
+                        dict.Remove(key);
+                }
+            }
+        }
+        private void RemoveAllConfigExceptConstructor(Type t)
+        {
+            /*
+        protected static Dictionary<Type, Dictionary<string, Delegate>> _MembersCreators;
+        protected static Dictionary<Type, List<string>> _NestedProperties;
+        protected static Dictionary<Type, List<string>> _Interfaces;
+        protected static Dictionary<Type, Tuple<string[], bool>> _Prefixes;
+        protected static Dictionary<Type, Tuple<string[], bool>> _Postfixes;
+        protected static Dictionary<Type, Dictionary<string, string[]>> _Dictionaries;
+        protected static Dictionary<Type, Dictionary<Type, Func<dynamic, bool>>> _InterfacesToObjects;
+        protected static Dictionary<Type, List<string>> _AllowDuplicates;
+            */
+            RemoveStaticDictionaryKey(_MembersCreators, t);
+            RemoveStaticDictionaryKey(_NestedProperties, t);
+            RemoveStaticDictionaryKey(_Interfaces, t);
+            RemoveStaticDictionaryKey(_Prefixes, t);
+            RemoveStaticDictionaryKey(_Postfixes, t);
+            RemoveStaticDictionaryKey(_Dictionaries, t);
+            RemoveStaticDictionaryKey(_InterfacesToObjects, t);
+            RemoveStaticDictionaryKey(_AllowDuplicates, t);
+        }
         private void SetMembersInformation(Type t)
         {
+            if (_OnlyConstructor.Contains(t))
+                RemoveAllConfigExceptConstructor(t);
+
             var pInfos = t.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy)
                 .Where(pInfo => pInfo.GetSetMethod() != null)
                 .ToList();
@@ -172,21 +207,21 @@ namespace Mapper
                 {
                     if (_MembersCreators[t].ContainsKey(kvp.Key.Name))
                     {
-                        changes[kvp.Key] = MemberTypeInfo.Creator;//_preMTInfos[kvp.Key] = MemberTypeInfo.Creator;
+                        if (!_OnlyConstructor.Contains(t)) changes[kvp.Key] = MemberTypeInfo.Creator;//_preMTInfos[kvp.Key] = MemberTypeInfo.Creator;
                         RemoveMember(kvp.Key, pInfos, fInfos);
                     }
                     else
                     {
                         if (_NestedProperties[t].Contains(kvp.Key.Name))
                         {
-                            changes[kvp.Key] = MemberTypeInfo.Nested;//_preMTInfos[kvp.Key] = MemberTypeInfo.Nested;
+                            if (!_OnlyConstructor.Contains(t)) changes[kvp.Key] = MemberTypeInfo.Nested;//_preMTInfos[kvp.Key] = MemberTypeInfo.Nested;
                             RemoveMember(kvp.Key, pInfos, fInfos);
                         }
 
                         Type mType = GetMemberType(kvp.Key);
                         if (typeof(IEnumerable).IsAssignableFrom(mType) && !typeof(string).IsAssignableFrom(mType))
                         {
-                            changes[kvp.Key] = changes[kvp.Key] | MemberTypeInfo.IEnumerable; //_preMTInfos[kvp.Key] = _preMTInfos[kvp.Key] | MemberTypeInfo.IEnumerable;
+                            if (!_OnlyConstructor.Contains(t)) changes[kvp.Key] = changes[kvp.Key] | MemberTypeInfo.IEnumerable; //_preMTInfos[kvp.Key] = _preMTInfos[kvp.Key] | MemberTypeInfo.IEnumerable;
                             RemoveMember(kvp.Key, pInfos, fInfos);
                         }
                     }
@@ -199,7 +234,7 @@ namespace Mapper
                 {
                     if (_MembersCreators[t].ContainsKey(kvp.Key.Name))
                     {
-                        changes[kvp.Key] = MemberTypeInfo.Creator; //_preMTInfos[kvp.Key] = MemberTypeInfo.Creator;
+                        if (!_OnlyConstructor.Contains(t)) changes[kvp.Key] = MemberTypeInfo.Creator; //_preMTInfos[kvp.Key] = MemberTypeInfo.Creator;
                         RemoveMember(kvp.Key, pInfos, fInfos);
                     }
                     else
@@ -207,7 +242,7 @@ namespace Mapper
                         Type mType = GetMemberType(kvp.Key);
                         if (typeof(IEnumerable).IsAssignableFrom(mType) && !typeof(string).IsAssignableFrom(mType))
                         {
-                            changes[kvp.Key] = changes[kvp.Key] | MemberTypeInfo.IEnumerable; //_preMTInfos[kvp.Key] = _preMTInfos[kvp.Key] | MemberTypeInfo.IEnumerable;
+                            if (!_OnlyConstructor.Contains(t)) changes[kvp.Key] = changes[kvp.Key] | MemberTypeInfo.IEnumerable; //_preMTInfos[kvp.Key] = _preMTInfos[kvp.Key] | MemberTypeInfo.IEnumerable;
                             RemoveMember(kvp.Key, pInfos, fInfos);
                         }
                     }
@@ -223,19 +258,20 @@ namespace Mapper
                 {
                     if (_NestedProperties[t].Contains(kvp.Key.Name))
                     {
-                        changes[kvp.Key] = MemberTypeInfo.Nested; //_preMTInfos[kvp.Key] = MemberTypeInfo.Nested;
+                        if (!_OnlyConstructor.Contains(t)) changes[kvp.Key] = MemberTypeInfo.Nested; //_preMTInfos[kvp.Key] = MemberTypeInfo.Nested;
                         RemoveMember(kvp.Key, pInfos, fInfos);
                     }
 
                     Type mType = GetMemberType(kvp.Key);
                     if (typeof(IEnumerable).IsAssignableFrom(mType) && !typeof(string).IsAssignableFrom(mType))
                     {
-                        changes[kvp.Key] = changes[kvp.Key] | MemberTypeInfo.IEnumerable; //_preMTInfos[kvp.Key] = _preMTInfos[kvp.Key] | MemberTypeInfo.IEnumerable;
+                        if (!_OnlyConstructor.Contains(t)) changes[kvp.Key] = changes[kvp.Key] | MemberTypeInfo.IEnumerable; //_preMTInfos[kvp.Key] = _preMTInfos[kvp.Key] | MemberTypeInfo.IEnumerable;
                         RemoveMember(kvp.Key, pInfos, fInfos);
                     }
                 }
             }
-            else
+            //built-in
+            else if (!_OnlyConstructor.Contains(t))
             {
                 //Set members type dictionary
                 foreach (KeyValuePair<MemberInfo, MemberTypeInfo> kvp in preMTInfos)
@@ -253,18 +289,19 @@ namespace Mapper
                 {
                     if (_Interfaces[t].Contains(kvp.Key.Name))
                     {
-                        changes[kvp.Key] = changes[kvp.Key] | MemberTypeInfo.Interface;
+                        if (!_OnlyConstructor.Contains(t)) changes[kvp.Key] = changes[kvp.Key] | MemberTypeInfo.Interface;
                         RemoveMember(kvp.Key, pInfos, fInfos);
                     }
 
                     Type mType = GetMemberType(kvp.Key);
                     if (typeof(IEnumerable).IsAssignableFrom(mType) && !typeof(string).IsAssignableFrom(mType))
                     {
-                        changes[kvp.Key] = changes[kvp.Key] | MemberTypeInfo.IEnumerable; //_preMTInfos[kvp.Key] = _preMTInfos[kvp.Key] | MemberTypeInfo.IEnumerable;
+                        if (!_OnlyConstructor.Contains(t)) changes[kvp.Key] = changes[kvp.Key] | MemberTypeInfo.IEnumerable; //_preMTInfos[kvp.Key] = _preMTInfos[kvp.Key] | MemberTypeInfo.IEnumerable;
                         RemoveMember(kvp.Key, pInfos, fInfos);
                     }
                 }
             }
+
             //Lock-static dictionaries
             lock (_LockObject)
             {
@@ -612,6 +649,27 @@ Type: {typeof(T).ToString()}");
                     return this;
                 }
             }
+        }
+        /// <summary>
+        /// If called, the mapper won't map any specific member of the T object, the mapper will only create an instance, with the constructor provided 
+        /// by MapperConfig.AddConstructor() IF it was provided, and return that instance, no more.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public MapperConfig MapOnlyConstructor<T>()
+        {
+            Type destination = typeof(T);
+
+            if (!_OnlyConstructor.Contains(destination))
+            {
+                lock (_LockObject)
+                {
+                    if (!_OnlyConstructor.Contains(destination))
+                        _OnlyConstructor.Add(destination);
+                }
+            }
+
+            return this;
         }
         /// <summary>
         /// Prefixes that Dapper's dynamic result will use in the member names.
