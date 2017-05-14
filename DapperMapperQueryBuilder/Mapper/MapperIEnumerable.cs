@@ -266,8 +266,6 @@ required to create dictionary {memberName} in {masterType.Name}. Key-value names
         {
             if (!nested)
             {
-                IEnumerable<IDictionary<string, object>> preDummy;
-
                 if (!allowDuplicates)
                     this.DummyEnumerable = cleanDapperResult
                         .Select(dyn => (IDictionary<string, object>)dyn)

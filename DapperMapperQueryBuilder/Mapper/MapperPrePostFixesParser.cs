@@ -141,21 +141,8 @@ namespace Mapper
         {
             return namesList.Select(str => RemoveFieldsUnderscore(str));
         }
-        //public IDictionary<string, object> RemovePrePostFixesFromDictionary(IDictionary<string, object> dict)
-        //{
-        //    return (IDictionary<string, object>)dict
-        //        .Select(kvp =>
-        //        {
-        //            string keyWithoutPrePostfixes = kvp.Key;
-        //            if (!RemovePrefixIfStringContains(ref keyWithoutPrePostfixes) && !RemovePostfixIfStringContains(ref keyWithoutPrePostfixes))
-        //                return kvp;
-        //            else
-        //                return new KeyValuePair<string, object>(keyWithoutPrePostfixes, kvp.Value);
-        //        });
-        //}
         public IEnumerable<IDictionary<string, object>> RemovePrePostFixesFromDictionary(IEnumerable<dynamic> dyn)
         {
-            int i = 0;
             List<Dictionary<string, object>> ienum = new List<Dictionary<string, object>>();
             foreach (dynamic d in dyn)
             {

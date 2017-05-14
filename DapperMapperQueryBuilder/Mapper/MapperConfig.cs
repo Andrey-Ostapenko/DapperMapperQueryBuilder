@@ -142,8 +142,8 @@ namespace Mapper
             RemoveStaticDictionaryKey(_MembersCreators, t);
             RemoveStaticDictionaryKey(_NestedProperties, t);
             RemoveStaticDictionaryKey(_Interfaces, t);
-            RemoveStaticDictionaryKey(_Prefixes, t);
-            RemoveStaticDictionaryKey(_Postfixes, t);
+            //RemoveStaticDictionaryKey(_Prefixes, t);
+            //RemoveStaticDictionaryKey(_Postfixes, t);
             RemoveStaticDictionaryKey(_Dictionaries, t);
             RemoveStaticDictionaryKey(_InterfacesToObjects, t);
             RemoveStaticDictionaryKey(_AllowDuplicates, t);
@@ -338,6 +338,7 @@ namespace Mapper
         /// <summary>
         /// Always call this when you have finished an object configuration, even if you just want the object to be included (f.i. even if the object
         /// have no nested types, only built-in, you have to call this method).
+        /// Only case you musn't call this is if you added prefixes or postfixes.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         public void EndConfig<T>()
