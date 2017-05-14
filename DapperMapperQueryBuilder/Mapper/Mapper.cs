@@ -11,7 +11,7 @@ using Exceptions;
 namespace Mapper
 {
     [Flags]
-    public enum MemberTypeInfo { BuiltIn = 1, Nested = 2, Creator = 4, IEnumerable = 8, Dictionary = 16, Interface = 32 }
+    public enum MemberTypeInfo { BuiltIn = 1, Nested = 2, Creator = 4, IEnumerable = 8, Dictionary = 16, Interface = 32, Ignore = 64 }
     
     public interface iDapperMapper
     {
@@ -150,7 +150,7 @@ with delegate {_Constructors[TType]}.", err);
         public T Map(IEnumerable<dynamic> dapperResult, bool cleanResult = false)
         {
             var parser = new PrePostFixesParser(this);
-            T mapped = NewObject(dapperResult.First());
+            T mapped = this.NewObject(dapperResult.First());
             if (_OnlyConstructor.Contains(this.TType)) return mapped;
 
             //TODO: divide el siguiente foreach en dos con dos nuevos diccionarios estáticos, uno para pInfos y otro para fInfos, 
@@ -162,8 +162,10 @@ with delegate {_Constructors[TType]}.", err);
             //Loop through all members
             foreach (KeyValuePair<MemberInfo, MemberTypeInfo> kvp in mtInfos)
             {
+                if (kvp.Value == MemberTypeInfo.Ignore)
+                    continue;
                 //Member have a creator
-                if ((kvp.Value & MemberTypeInfo.Creator) == MemberTypeInfo.Creator)
+                else if ((kvp.Value & MemberTypeInfo.Creator) == MemberTypeInfo.Creator)
                 {
                     //MemberDelegate mDel = (MemberDelegate)_MembersCreators[this.TType][kvp.Key.Name];
                     Func<dynamic, object> mDel = (Func<dynamic, object>)_MembersCreators[this.TType][kvp.Key.Name];

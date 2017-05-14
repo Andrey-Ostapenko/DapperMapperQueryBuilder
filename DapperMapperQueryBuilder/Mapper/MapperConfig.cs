@@ -185,7 +185,12 @@ namespace Mapper
 
             IEnumerable<MemberInfo> mInfos = pInfos.Union((IEnumerable<MemberInfo>)fInfos);
             Dictionary<MemberInfo, MemberTypeInfo> preMTInfos = (Dictionary<MemberInfo, MemberTypeInfo>)mInfos
-                .Select(x => new KeyValuePair<MemberInfo, MemberTypeInfo>(x, MemberTypeInfo.BuiltIn))
+                .Select(x =>
+                {
+                    if (_Ignores.ContainsKey(t) && _Ignores[t].Contains(x.Name))
+                        return new KeyValuePair<MemberInfo, MemberTypeInfo>(x, MemberTypeInfo.Ignore);
+                    else return new KeyValuePair<MemberInfo, MemberTypeInfo>(x, MemberTypeInfo.BuiltIn);
+                })
                 .ToDictionary(x => x.Key, x => x.Value);
 
             //prevent collection was modified exception
@@ -203,7 +208,7 @@ namespace Mapper
             if (_MembersCreators.ContainsKey(t) && _NestedProperties.ContainsKey(t))
             {
                 //Set members type dictionary
-                foreach (KeyValuePair<MemberInfo, MemberTypeInfo> kvp in preMTInfos)
+                foreach (KeyValuePair<MemberInfo, MemberTypeInfo> kvp in preMTInfos.Where(kvp=>kvp.Value != MemberTypeInfo.Ignore))
                 {
                     if (_MembersCreators[t].ContainsKey(kvp.Key.Name))
                     {
@@ -230,7 +235,7 @@ namespace Mapper
             else if (_MembersCreators.ContainsKey(t))
             {
                 //Set members type dictionary
-                foreach (KeyValuePair<MemberInfo, MemberTypeInfo> kvp in preMTInfos)
+                foreach (KeyValuePair<MemberInfo, MemberTypeInfo> kvp in preMTInfos.Where(kvp => kvp.Value != MemberTypeInfo.Ignore))
                 {
                     if (_MembersCreators[t].ContainsKey(kvp.Key.Name))
                     {
@@ -254,7 +259,7 @@ namespace Mapper
                 preNamesList = preNamesList.Union(_NestedProperties[t]);
 
                 //Set members type dictionary
-                foreach (KeyValuePair<MemberInfo, MemberTypeInfo> kvp in preMTInfos)
+                foreach (KeyValuePair<MemberInfo, MemberTypeInfo> kvp in preMTInfos.Where(kvp => kvp.Value != MemberTypeInfo.Ignore))
                 {
                     if (_NestedProperties[t].Contains(kvp.Key.Name))
                     {
@@ -274,7 +279,7 @@ namespace Mapper
             else if (!_OnlyConstructor.Contains(t))
             {
                 //Set members type dictionary
-                foreach (KeyValuePair<MemberInfo, MemberTypeInfo> kvp in preMTInfos)
+                foreach (KeyValuePair<MemberInfo, MemberTypeInfo> kvp in preMTInfos.Where(kvp => kvp.Value != MemberTypeInfo.Ignore))
                 {
                     Type mType = GetMemberType(kvp.Key);
                     if (typeof(IEnumerable).IsAssignableFrom(mType) && !typeof(string).IsAssignableFrom(mType))
@@ -285,7 +290,7 @@ namespace Mapper
             if (_Interfaces.ContainsKey(t))
             {
                 //Set members type dictionary
-                foreach (KeyValuePair<MemberInfo, MemberTypeInfo> kvp in preMTInfos)
+                foreach (KeyValuePair<MemberInfo, MemberTypeInfo> kvp in preMTInfos.Where(kvp => kvp.Value != MemberTypeInfo.Ignore))
                 {
                     if (_Interfaces[t].Contains(kvp.Key.Name))
                     {
@@ -355,6 +360,10 @@ Instance constructor delegate doesn't return correct type.
 Correct type: {typeof(T).ToString()}");
 
             Type destination = typeof(T);
+            if (destination.IsInterface)
+                throw new CustomException_MapperConfig(
+                    @"MapperConfig.AddConstructor: Interfaces can't have a constructor!");
+
             if (!_Constructors.ContainsKey(destination))
             {
                 lock (_LockObject)
@@ -387,6 +396,9 @@ Type: {typeof(T).ToString()}");
             Func<dynamic, object> creatorExpression,
             bool overwrite = false)
         {
+            if (_OnlyConstructor.Contains(typeof(T)))
+                throw new CustomException_MapperConfig(
+                    @"MapperConfig.AddMemberCreator: You can't any configuration if MapOnlyConstructor have been setted.");
             string memberName = GetPropertyReturnName(memberExpression);
             return AddMemberCreator<T>(memberName, creatorExpression, overwrite);
         }
@@ -401,13 +413,18 @@ Type: {typeof(T).ToString()}");
         public MapperConfig AddMemberCreator<T>(string memberName, Func<dynamic, object> creatorExpression, bool overwrite = false)
         {
             Type destination = typeof(T);
-
+            if (_OnlyConstructor.Contains(destination))
+                throw new CustomException_MapperConfig(
+                    @"MapperConfig.AddMemberCreator: You can't any configuration if MapOnlyConstructor have been setted.");
             if (_NestedProperties.ContainsKey(destination) && _NestedProperties[destination].Contains(memberName))
                 throw new CustomException_MapperConfig(
-                    $@"MapperConfig.AddMemberCreator: One member({memberName}) can not have a creator expression AND be be setted as a nested type at same type");
-            else if (_Interfaces.ContainsKey(destination) && _Interfaces[destination].Contains(memberName))
+                    $@"MapperConfig.AddMemberCreator: One member({memberName}) can not have a creator expression AND be setted as a nested type at same type");
+            //else if (_Interfaces.ContainsKey(destination) && _Interfaces[destination].Contains(memberName))
+            //    throw new CustomException_MapperConfig(
+            //        $@"MapperConfig.AddMemberCreator: One member({memberName}) can not have a creator expression AND be setted as an interface at same type");
+            if (_Ignores.ContainsKey(destination) && _Ignores[destination].Contains(memberName))
                 throw new CustomException_MapperConfig(
-                    $@"MapperConfig.AddMemberCreator: One member({memberName}) can not have a creator expression AND be setted as an interface at same type");
+                    $@"MapperConfig.AddMemberCreator: One member({memberName}) can not have a creator expression if it was setted for ignore.");
 
             lock (_LockObject)
             {
@@ -442,6 +459,9 @@ Type: {typeof(T).ToString()}");
         /// <returns></returns>
         public MapperConfig AddNestedProperty<T, TMember>(bool isAnInterface, Expression<Func<T, TMember>> memberExpression)
         {
+            if (_OnlyConstructor.Contains(typeof(T)))
+                throw new CustomException_MapperConfig(
+                    @"MapperConfig.AddNestedProperty: You can't any configuration if MapOnlyConstructor have been setted.");
             string propName = GetPropertyReturnName(memberExpression);
             return AddNestedProperty<T>(isAnInterface, propName);
         }
@@ -455,6 +475,9 @@ Type: {typeof(T).ToString()}");
         /// <returns></returns>
         public MapperConfig AddNestedProperty<T, TMember>(bool isAnInterface, params Expression<Func<T, TMember>>[] memberExpressions)
         {
+            if (_OnlyConstructor.Contains(typeof(T)))
+                throw new CustomException_MapperConfig(
+                    @"MapperConfig.AddNestedProperty: You can't any configuration if MapOnlyConstructor have been setted.");
             foreach (Expression<Func<T, TMember>> mExp in memberExpressions)
             {
                 string propName = GetPropertyReturnName(mExp);
@@ -473,20 +496,29 @@ Type: {typeof(T).ToString()}");
         {
             Type destination = typeof(T);
 
+            if (_OnlyConstructor.Contains(destination))
+                throw new CustomException_MapperConfig(
+                    @"MapperConfig.AddNestedProperty: You can't any configuration if MapOnlyConstructor have been setted.");
             if (_MembersCreators.ContainsKey(destination) && _MembersCreators[destination].ContainsKey(memberName))
                 throw new CustomException_MapperConfig(
                     $@"MapperConfig.AddNestedProperty: One member({memberName}) can not have a creator expression AND be setted as a nested type at same type");
+            if (_Ignores.ContainsKey(destination) && _Ignores[destination].Contains(memberName))
+                throw new CustomException_MapperConfig(
+                    $@"MapperConfig.AddNestedProperty: One member({memberName}) can not be setted as nested property if it was setted for ignore.");
 
-            lock (_LockObject)
+            if (isAnInterface)
             {
-                if (isAnInterface)
+                lock (_LockObject)
                 {
                     if (!_Interfaces.ContainsKey(destination))
                         _Interfaces.Add(destination, new List<string>() { memberName });
                     else if (!_Interfaces[destination].Contains(memberName))
                         _Interfaces[destination].Add(memberName);
                 }
+            }
 
+            lock (_LockObject)
+            {
                 if (!_NestedProperties.ContainsKey(destination))
                 {
                     _NestedProperties.Add(destination, new List<string>() { memberName });
@@ -509,8 +541,62 @@ Type: {typeof(T).ToString()}");
         /// <returns></returns>
         public MapperConfig AddNestedProperty<T>(bool isAnInterface, params string[] memberNames)
         {
+            if (_OnlyConstructor.Contains(typeof(T)))
+                throw new CustomException_MapperConfig(
+                    @"MapperConfig.AddNestedProperty: You can't any configuration if MapOnlyConstructor have been setted.");
             foreach (string mName in memberNames) AddNestedProperty<T>(isAnInterface, mName);
             return this;
+        }
+        /// <summary>
+        /// Mapper will ignore the property specified. Can't be used with properties previously configurated with AddMemberCreator, 
+        /// AddNestedProperty or AddDictionary.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TMember"></typeparam>
+        /// <param name="memberExpression"></param>
+        /// <returns></returns>
+        public MapperConfig AddIgnoreProperty<T, TMember>(Expression<Func<T, TMember>> memberExpression)
+        {
+            if (_OnlyConstructor.Contains(typeof(T)))
+                throw new CustomException_MapperConfig(
+                    @"MapperConfig.AddIgnoreProperty: You can't any configuration if MapOnlyConstructor have been setted.");
+            string memberName = GetPropertyReturnName(memberExpression);
+            return AddIgnoreProperty<T>(memberName);
+        }
+        /// <summary>
+        /// Mapper will ignore the property specified. Can't be used with properties previously configurated with AddMemberCreator, 
+        /// AddNestedProperty or AddDictionary.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="memberName"></param>
+        /// <returns></returns>
+        public MapperConfig AddIgnoreProperty<T>(string memberName)
+        {
+            Type destination = typeof(T);
+            if (_OnlyConstructor.Contains(destination))
+                throw new CustomException_MapperConfig(
+                    @"MapperConfig.AddIgnoreProperty: You can't any configuration if MapOnlyConstructor have been setted.");
+            if ((_MembersCreators.ContainsKey(destination) && _MembersCreators[destination].ContainsKey(memberName)) || //member have a creator
+                (_NestedProperties.ContainsKey(destination) && _NestedProperties[destination].Contains(memberName)) || //member setted as nested
+                (_Dictionaries.ContainsKey(destination) && _Dictionaries[destination].ContainsKey(memberName))) //member setted as dictionary
+                    throw new CustomException_MapperConfig(
+                        $@"MapperConfig.AddIgnoreProperty: Can't ignore a member({memberName}) if parameter overwriteOtherConfigurations is false and
+the member have been configurated before with a member creator, as nested or as dictionary.");
+
+            lock (_LockObject)
+            {
+                if (!_Ignores.ContainsKey(destination))
+                {
+                    _Ignores.Add(destination, new List<string>() { memberName });
+                    return this;
+                }
+                else
+                {
+                    if (!_Ignores[destination].Contains(memberName))
+                        _Ignores[destination].Add(memberName);
+                    return this;
+                }
+            }
         }
         /// <summary>
         /// Set a member as a dictionary and the name that keys and values will have in the Dapper's dynamic result:
@@ -527,6 +613,9 @@ Type: {typeof(T).ToString()}");
             string[] keyValueDynamicNames,
             bool overwrite = false)
         {
+            if (_OnlyConstructor.Contains(typeof(T)))
+                throw new CustomException_MapperConfig(
+                    @"MapperConfig.AddDictionary: You can't any configuration if MapOnlyConstructor have been setted.");
             string memberName = GetPropertyReturnName(memberExpression);
             return AddDictionary<T>(memberName, keyValueDynamicNames, overwrite);
         }
@@ -541,6 +630,12 @@ Type: {typeof(T).ToString()}");
         public MapperConfig AddDictionary<T>(string memberName, string[] keyValueDynamicNames, bool overwrite = false)
         {
             Type destination = typeof(T);
+            if (_OnlyConstructor.Contains(destination))
+                throw new CustomException_MapperConfig(
+                    @"MapperConfig.AddDictionary: You can't any configuration if MapOnlyConstructor have been setted.");
+            if (_Ignores.ContainsKey(destination) && _Ignores[destination].Contains(memberName))
+                throw new CustomException_MapperConfig(
+                    $@"MapperConfig.AddDictionary: One member({memberName}) can not be setted as a dictionary if it was setted for ignore.");
 
             lock (_LockObject)
             {
@@ -633,6 +728,10 @@ Type: {typeof(T).ToString()}");
         public MapperConfig AllowDuplicatesIfEnumerable<T>(string memberName, bool allowDuplicates = false)
         {
             Type destination = typeof(T);
+            if (_Ignores.ContainsKey(destination) && _Ignores[destination].Contains(memberName))
+                throw new CustomException_MapperConfig(
+                    $@"MapperConfig.AllowDuplicatesIfEnumerable: One member({memberName}) can not be setted for allow duplicates if it was setted for ignore.");
+
             if (!allowDuplicates) return this;
 
             lock (_LockObject)
@@ -659,6 +758,9 @@ Type: {typeof(T).ToString()}");
         public MapperConfig MapOnlyConstructor<T>()
         {
             Type destination = typeof(T);
+            if (destination.IsInterface)
+                throw new CustomException_MapperConfig(
+                    @"MapperConfig.MapOnlyConstructor: Interfaces can't have a constructor!");
 
             if (!_OnlyConstructor.Contains(destination))
             {
@@ -689,6 +791,10 @@ Type: {typeof(T).ToString()}");
         public MapperConfig AddPrefixes<T>(string[] prefixes, bool exclusive = false)
         {
             Type destination = typeof(T);
+            if (_OnlyConstructor.Contains(destination))
+                throw new CustomException_MapperConfig(
+                    @"MapperConfig.AddPrefixes: You can't any configuration if MapOnlyConstructor have been setted.");
+
             lock (_LockObject)
             {
                 if (!exclusive)
@@ -728,7 +834,7 @@ Type: {typeof(T).ToString()}");
 
             if (!_Prefixes.ContainsKey(destination))
                 throw new CustomException_MapperConfig(
-                    $@"Mapperconfig.RemovePrefixes There're no prefixes for type {destination.ToString()}.");
+                    $@"Mapperconfig.RemovePrefixes: There're no prefixes for type {destination.ToString()}.");
             else
             {
                 lock (_LockObject)
@@ -764,6 +870,10 @@ Type: {typeof(T).ToString()}");
         public MapperConfig AddPostfixes<T>(string[] postfixes, bool exclusive = false)
         {
             Type destination = typeof(T);
+            if (_OnlyConstructor.Contains(destination))
+                throw new CustomException_MapperConfig(
+                    @"MapperConfig.AddPostfixes: You can't any configuration if MapOnlyConstructor have been setted.");
+
             lock (_LockObject)
             {
                 if (!exclusive)

@@ -214,6 +214,7 @@ namespace MQBStatic
         protected static Dictionary<Type, Dictionary<string, Delegate>> _MembersCreators;
         protected static Dictionary<Type, List<string>> _NestedProperties;
         protected static Dictionary<Type, List<string>> _Interfaces;
+        protected static Dictionary<Type, List<string>> _Ignores;
         protected static Dictionary<Type, Tuple<string[], bool>> _Prefixes;
         protected static Dictionary<Type, Tuple<string[], bool>> _Postfixes;
         #endregion
@@ -261,6 +262,22 @@ namespace MQBStatic
                         _NestedProperties = new Dictionary<Type, List<string>>();
                 }
             }
+            if (_Interfaces == null)
+            {
+                lock (_LockObject)
+                {
+                    if (_Interfaces == null)
+                        _Interfaces = new Dictionary<Type, List<string>>();
+                }
+            }
+            if (_Ignores == null)
+            {
+                lock (_LockObject)
+                {
+                    if (_Ignores == null)
+                        _Ignores = new Dictionary<Type, List<string>>();
+                }
+            }
             if (_Prefixes == null)
             {
                 lock (_LockObject)
@@ -276,15 +293,7 @@ namespace MQBStatic
                     if (_Postfixes == null)
                         _Postfixes = new Dictionary<Type, Tuple<string[], bool>>();
                 }
-            }
-            if (_Interfaces == null)
-            {
-                lock (_LockObject)
-                {
-                    if (_Interfaces == null)
-                        _Interfaces = new Dictionary<Type, List<string>>();
-                }
-            }
+            }            
         }
         #endregion
     }
