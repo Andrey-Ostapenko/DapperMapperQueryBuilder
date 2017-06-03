@@ -800,7 +800,7 @@ the member have been configurated before with a member creator, as nested or as 
             {
                 if (!exclusive)
                 {
-                    if (!_Prefixes[destination].Item2)
+                    if (_Prefixes.ContainsKey(destination) && !_Prefixes[destination].Item2)
                         _Prefixes[destination] = new Tuple<string[], bool>(_Prefixes[destination].Item1, false);
 
                     if (!_Prefixes.ContainsKey(destination))
@@ -879,7 +879,7 @@ the member have been configurated before with a member creator, as nested or as 
             {
                 if (!exclusive)
                 {
-                    if (!_Postfixes[destination].Item2)
+                    if (_Postfixes.ContainsKey(destination) && !_Postfixes[destination].Item2)
                         _Postfixes[destination] = new Tuple<string[], bool>(_Postfixes[destination].Item1, false);
 
                     if (!_Postfixes.ContainsKey(destination))
