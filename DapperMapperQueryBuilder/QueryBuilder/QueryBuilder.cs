@@ -23,7 +23,7 @@ namespace QBuilder
         #endregion
 
         #region properties
-        public dynamic Parameters { get { return this._Parameters; } }
+        public ExpandoObject Parameters { get { return this._Parameters as ExpandoObject; } }
         #endregion
 
         #region helpers
@@ -39,6 +39,14 @@ namespace QBuilder
         public void StoreParameter(string name, object value)
         {
             _Parameters.Add(name, value);
+        }
+        /// <summary>
+        /// Only works with c# built-in objects. Name of the params is: "@{paramsPrefix}{param.ToString}".
+        /// </summary>
+        /// <param name="paramsObjects"></param>
+        public void StoreParameters(IEnumerable<object> paramsObjects, string paramsPrefix)
+        {
+            foreach (object param in paramsObjects) _Parameters.Add($"@{paramsPrefix}{param}", param);
         }
         public void StoreParametersFrom<T>(T obj, string paramSuffix = "")
         {
@@ -131,7 +139,7 @@ namespace QBuilder
             AddInsertFirstColumns(t);
             CloseBrackets();
             AddInsertValues();
-                        
+
             int i = 0;
             foreach (T obj in objs)
             {

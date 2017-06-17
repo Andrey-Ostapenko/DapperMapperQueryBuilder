@@ -45,7 +45,7 @@ namespace Mapper
         /// <param name="nestedT"></param>
         private void CopyConfigurations(Type baseT, Type nestedT)
         {
-            lock(_LockObject)
+            lock (_LockObject)
             {
                 //_AllowDuplicates
                 if (_AllowDuplicates.ContainsKey(baseT))
@@ -208,7 +208,7 @@ namespace Mapper
             if (_MembersCreators.ContainsKey(t) && _NestedProperties.ContainsKey(t))
             {
                 //Set members type dictionary
-                foreach (KeyValuePair<MemberInfo, MemberTypeInfo> kvp in preMTInfos.Where(kvp=>kvp.Value != MemberTypeInfo.Ignore))
+                foreach (KeyValuePair<MemberInfo, MemberTypeInfo> kvp in preMTInfos.Where(kvp => kvp.Value != MemberTypeInfo.Ignore))
                 {
                     if (_MembersCreators[t].ContainsKey(kvp.Key.Name))
                     {
@@ -580,8 +580,8 @@ Type: {typeof(T).ToString()}");
             if ((_MembersCreators.ContainsKey(destination) && _MembersCreators[destination].ContainsKey(memberName)) || //member have a creator
                 (_NestedProperties.ContainsKey(destination) && _NestedProperties[destination].Contains(memberName)) || //member setted as nested
                 (_Dictionaries.ContainsKey(destination) && _Dictionaries[destination].ContainsKey(memberName))) //member setted as dictionary
-                    throw new CustomException_MapperConfig(
-                        $@"MapperConfig.AddIgnoreProperty: Can't ignore a member({memberName}) if parameter overwriteOtherConfigurations is false and
+                throw new CustomException_MapperConfig(
+                    $@"MapperConfig.AddIgnoreProperty: Can't ignore a member({memberName}) if parameter overwriteOtherConfigurations is false and
 the member have been configurated before with a member creator, as nested or as dictionary.");
 
             lock (_LockObject)

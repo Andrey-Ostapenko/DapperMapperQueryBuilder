@@ -22,7 +22,7 @@ namespace QBuilder
             leftSide = leftSide.PutAhead(leftAlias, ".");
             rightSide = rightSide.PutAhead(rightAlias, ".");
 
-            ConditionString = string.Concat(leftSide, condition, rightSide, separator, " ");
+            ConditionString = string.Concat(leftSide, condition, rightSide, " ", separator, " ");
         }
         /// <summary>
         /// Condition "=", separator "".
@@ -52,10 +52,28 @@ namespace QBuilder
 
             ConditionString = string.Concat(leftSide, "=", rightSide, " ");
         }
+        /// <summary>
+        /// Contition "IN". Add "{leftAlias}.{leftSide} IN (", join all parametersNames strings with separator as ",", and add "@" to each parameter with replace.
+        /// With open brackets AND close brackets
+        /// </summary>
+        /// <param name="paramsIn"></param>
+        public SQLCondition(string leftSide, string leftAlias, IEnumerable<string> parametersNames)
+        {
+            if (leftSide == null || parametersNames == null)
+                throw new CustomException_StringSQLBuilder("SQLCondition: A condition must have both left and right side string.");
+
+            string left = leftSide;
+            if (!string.IsNullOrEmpty(leftAlias)) left = left.PutAhead(leftAlias, ".");
+
+            ConditionString = string.Join(",", parametersNames)
+                .PutAhead($"{left} IN (@")
+                .Append(") ");
+            ConditionString = ConditionString.Replace(",", ",@");
+        }
 
         public string ConditionString { get; set; }
     }
-    
+
     public class StringSQLBuilder : MQBStatic_QBuilder
     {
         public StringSQLBuilder()
@@ -169,7 +187,7 @@ namespace QBuilder
             }
 
             private StringSQLBuilder _qBuilder;
-            
+
             #region get columns by type
             /// <summary>
             /// Without first and last commas.
@@ -452,7 +470,7 @@ namespace QBuilder
         }
         public StringSQLBuilder AddSelect(IEnumerable<string> columns, string tableAlias)
         {
-            var cBuilder = new StringBuilder();            
+            var cBuilder = new StringBuilder();
             Query = $"SELECT {cBuilder.ConcatAndAddCommasAndAlias(columns, tableAlias)} ";
             return this;
         }
@@ -540,7 +558,7 @@ namespace QBuilder
         /// <param name="columns"></param>
         /// <returns></returns>
         public StringSQLBuilder AddInsertFirstColumns(IEnumerable<string> columns)
-        {            
+        {
             Query = Query.Append("(", string.Join(",", columns));
             return this;
         }
@@ -666,7 +684,7 @@ namespace QBuilder
             Query = Query.Append("SET ", uBuilder.GetUpdateSetString(t, tableAlias, paramSuffix), " ");
             return this;
         }
-        public StringSQLBuilder AddUpdateSet(IEnumerable<string> columns,string paramSuffix = "")
+        public StringSQLBuilder AddUpdateSet(IEnumerable<string> columns, string paramSuffix = "")
         {
             var uBuilder = new UpdateBuilder();
             Query = Query.Append("SET ", uBuilder.GetUpdateSetString(columns, paramSuffix), " ");
@@ -749,10 +767,11 @@ namespace QBuilder
         /// </summary>
         /// <param name="ownersIds"></param>
         /// <returns></returns>
-        public StringSQLBuilder AddOwnersClauses(IEnumerable<int> ownersIds)
+        public StringSQLBuilder AddOwnersClauses(IEnumerable<int> ownersIds, string tableAlias = "")
         {
+            tableAlias = string.IsNullOrEmpty(tableAlias) ? "" : $"{tableAlias}.";
             int[] ids = ownersIds.ToArray();
-            Query = Query.Append("ocdad.IdOwnerComunidad=", ids[0].ToString(), " AND oejer.IdOwnerEjercicio=", ids[1].ToString(), " ");
+            Query = Query.Append($"{tableAlias}IdOwnerComunidad=", ids[0].ToString(), $" AND {tableAlias}IdOwnerEjercicio=", ids[1].ToString(), " ");
             return this;
         }
         /// <summary>
@@ -767,7 +786,7 @@ namespace QBuilder
         public StringSQLBuilder AddWhere(IEnumerable<SQLCondition> conditions)
         {
             Query = Query.Append("WHERE ");
-            foreach(SQLCondition condition in conditions) Query = Query.Append(condition.ConditionString, " ");
+            foreach (SQLCondition condition in conditions) Query = Query.Append(condition.ConditionString, " ");
             return this;
         }
         public StringSQLBuilder AddWhere(SQLCondition condition)
@@ -886,11 +905,36 @@ namespace QBuilder
         /// <returns></returns>
         public StringSQLBuilder AddInParameters(IEnumerable<string> parametersNames)
         {
-            var cBuilder = new StringBuilder();
             Query = Query.Append(
-                "IN (", 
+                "IN (",
                 MakeParameters(
                     string.Join(",", parametersNames)));
+            return this;
+        }
+        /// <summary>
+        /// Add "{firstSeparator} condition". With in-between space.
+        /// </summary>
+        /// <param name="firstSeparator"></param>
+        /// <param name="condition"></param>
+        /// <returns></returns>
+        public StringSQLBuilder AddCondition(string firstSeparator, SQLCondition condition)
+        {
+            Query = Query.Append(firstSeparator, " ", condition.ConditionString);
+
+            return this;
+        }
+        /// <summary>
+        /// Add first firstSeparator, then the conditions. Once it have begun to add conditions, it won't add separators before, 
+        /// between or after the conditions (of course conditions can have their self separators, as always).
+        /// </summary>
+        /// <param name="conditions"></param>
+        /// <returns></returns>
+        public StringSQLBuilder AddConditions(string firstSeparator, IEnumerable<SQLCondition> conditions)
+        {
+            Query = Query.Append(firstSeparator);
+            foreach (SQLCondition condition in conditions)
+                Query = Query.Append(condition.ConditionString);
+
             return this;
         }
         #endregion
